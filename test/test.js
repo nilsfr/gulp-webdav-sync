@@ -76,6 +76,7 @@ describe( PLUGIN_NAME
         function start_tls( done ) {
           var opt = {
             cert: fs.readFileSync( SRV_CERT )
+            , ciphers: "DEFAULT:@SECLEVEL=0"
             , key: fs.readFileSync( SRV_KEY )
           }
           tls_tunnel = tls.createServer(
@@ -194,7 +195,7 @@ describe( PLUGIN_NAME
                     , contents: new Buffer( MOCK )
                   } )
                   var options = {
-                    'base': os.tmpDir()
+                    'base': os.tmpdir()
                   }
                   var unit = mod( options, HREF )
                   unit.on(
@@ -520,6 +521,7 @@ describe( PLUGIN_NAME
                   var expected_path = path.join( node, MOCK )
                   var options = {
                     ca: fs.readFileSync( CA_CERT )
+                    , ciphers: "DEFAULT:@SECLEVEL=0"
                   }
                   var uri = url.parse( HREF )
                   var tls = {

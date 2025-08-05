@@ -73,7 +73,7 @@ const VERSION = require( './package.json' ).version
 var stream
 
 module.exports = function () {
-  var _string
+  var _string = null
   var codes = []
   var _options = {
     'base': process.cwd()
@@ -83,6 +83,7 @@ module.exports = function () {
     , 'log': 'error'
     , 'logAuth': false
     , 'uselastmodified': 1000
+    , 'recursive': false
   }
   for ( var i in arguments ) {
     if ( typeof arguments[i] === 'string' ) {
@@ -96,13 +97,7 @@ module.exports = function () {
     if ( typeof _options.base !== 'undefined' ) {
       _options.base = path.normalize( path.resolve( _options.base ) )
     }
-    if ( _options.protocol
-      || _options.slashes
-      || _options.auth
-      || _options.port
-      || _options.hostname
-      || _options.pathname
-      ) {
+    if ( !_string) {
       if ( !_options.protocol ) {
         _options.protocol = 'http:'
       }
@@ -117,8 +112,8 @@ module.exports = function () {
   var href
   if ( _string ) {
     href = _string
-  } else
-  if ( url.format( _options ) !== '' ) {
+  }
+  else if ( url.format( _options ) !== '' ) {
     href = url.format( _options )
   } else {
     href = 'http://localhost/'
@@ -256,7 +251,23 @@ module.exports = function () {
           )
         }
         path_ = filter_on_href( list, dest_url )
-        if ( path_.length === 1 ) {
+        if ( _options.recursive ) {
+          recursive_mkcol(
+            url.resolve(dest_url, "."),
+            _options,
+            function (res, base_col) {
+              if (base_col) {
+                _info_status(
+                  res.statusCode,
+                  "Create collection " + base_col,
+                  _options
+                )
+              }
+              _mkcol( dest_url, _options, resume )
+            }
+          );
+        }
+        else if ( path_.length === 1 ) {
           resume( { statusCode: path_[0].stat } )
         } else {
           _mkcol( dest_url, _options, resume )
@@ -274,7 +285,25 @@ module.exports = function () {
             return
           }
         } else {
-          _put( dest_url, vinyl, _options, resume )
+          if ( _options.recursive ) {
+            recursive_mkcol(
+              url.resolve(dest_url, "."),
+              _options,
+              function (res, base_col) {
+                if (base_col) {
+                  _info_status(
+                    res.statusCode,
+                    "Create collection " + base_col,
+                    _options
+                  )
+                }
+                _put( dest_url, vinyl, _options, resume )
+              }
+            );
+          }
+          else {
+            _put( dest_url, vinyl, _options, resume )
+          }
           return
         }
       }
@@ -505,7 +534,7 @@ function _info_status( statusCode, string, _options ) {
 
 function _info_status_code( codes, _options ) {
   codes = codes.filter( function ( code ) {
-    return !( code === 200 || code === 404 )
+    return !( code === 200 || code === 201 || code === 404 )
   } )
   codes.sort().forEach( function ( element ) {
     _info_code( element, _options )
@@ -569,12 +598,65 @@ function _mkcol( href, _options, callback ) {
   req.end()
 }
 
+function recursive_mkcol(href, _options, callback, create_paths, found_base) {
+  if (found_base) {
+    let col = create_paths.pop()
+    let last_col;
+    const mkcol_callback = (err, res) => {
+      if ( err ) {
+        _on_error( err )
+      }
+      last_col = col;
+      col = create_paths.pop()
+      if (col) {
+        _mkcol( col, _options, mkcol_callback)
+      }
+      else {
+        callback(res, last_col)
+      }
+    }
+    _mkcol(col, _options, mkcol_callback)
+    return
+  }
+  _propfind(
+      href,
+      0,
+      _options,
+      function ( err, res, dom ) {
+        if (res.statusCode === 404) {
+          if ( !create_paths ) {
+            create_paths = []
+          }
+          create_paths.push(href)
+          recursive_mkcol(
+            url.resolve(href, ".."),
+            _options,
+            callback,
+            create_paths
+          )
+        }
+        else if (create_paths) {
+          recursive_mkcol(
+            href,
+            _options,
+            callback,
+            create_paths,
+            true
+          )
+        }
+        else {
+          callback(res)
+        }
+      }
+  )
+}
+
 function _on_error( error ) {
   stream.emit( 'error', error )
 }
 
 function _propfind( href, depth, _options, callback ) {
-  var options, req
+  var options, req;
   options = Object.assign(
       {}
     , { url: href }
@@ -586,23 +668,25 @@ function _propfind( href, depth, _options, callback ) {
     if ( err ) {
       _on_error( err )
     }
-    if ( !/(application|text)\/xml/i.test( res.headers['content-type'] ) ) {
+    if ( /(application|text)\/xml/i.test( res.headers['content-type'] ) ) {
+      var opt = {
+        explicitCharkey: true
+        , tagNameProcessors: [xml2js.processors.stripPrefix]
+      }
+      xml2js.parseString(
+          content
+          , opt
+          , function (err, result) {
+            if (err) {
+              _on_error(err)
+            }
+            callback(err, res, result)
+          }
+      )
+    }
+    else {
       callback( err, res, null )
     }
-    var opt = {
-      explicitCharkey: true
-      , tagNameProcessors: [ xml2js.processors.stripPrefix ]
-    }
-    xml2js.parseString(
-        content
-      , opt
-      , function ( err, result ) {
-          if ( err ) {
-            _on_error( err )
-          }
-          callback( err, res, result )
-        }
-    )
   }
   req = request( options, parse )
   req.on( 'error', _on_error )
