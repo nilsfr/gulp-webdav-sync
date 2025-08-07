@@ -22,28 +22,28 @@
     "prepublish": "node prepublish"
   },
   "devDependencies": {
-    "del": "^3.0.0",
-    "fs-extra": "^4.0.2",
-    "gulp": "~3.9.0",
-    "gulp-debug": "^3.1.0",
-    "gulp-jscs": "^4.0.0",
+    "del": "^8.0.0",
+    "fs-extra": "^11.3.1",
+    "gulp": "~5.0.1",
+    "gulp-debug": "^5.0.1",
+    "gulp-jscs": "^4.1.0",
     "gulp-jscs-stylish": "^1.4.0",
-    "gulp-jshint": "^2.0.1",
-    "jsDAV": "~0.3.2",
-    "jshint": "^2.9.3",
+    "gulp-jshint": "^2.1.0",
+    "jsDAV": "~0.3.4",
+    "jshint": "^2.13.6",
     "jshint-stylish": "^2.2.1",
-    "merge-stream": "~1.0.0",
-    "mocha": "^3.0.2",
-    "npmconf": "~2.1.2",
-    "npmlog": "^4.0.0",
-    "vinyl": "^2.0.2"
+    "merge-stream": "~2.0.0",
+    "mocha": "^11.7.1",
+    "npmconf": "~2.1.3",
+    "npmlog": "^7.0.1",
+    "vinyl": "^3.0.1"
   },
   "dependencies": {
-    "chalk": "^2.1.0",
+    "chalk": "^4.1.2",
     "plugin-error": "^1.0.1",
-    "request": "^2.81.0",
-    "xml2js": "^0.4.17"
+    "request": "^2.88.2",
     "socks-proxy-agent": "^8.0.5",
+    "xml2js": "^0.6.2"
   },
   "homepage": "https://github.com/millercl/gulp-webdav-sync#readme",
   "directories": {
