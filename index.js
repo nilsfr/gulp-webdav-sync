@@ -25,6 +25,7 @@
 var chalk = require( 'chalk' )
 var http = require( 'http' )
 var https = require( 'https' )
+var SocksProxyAgent = require( 'socks-proxy-agent' ).SocksProxyAgent
 var path = require( 'path' )
 var PluginError = require('plugin-error');
 var Stream = require( 'stream' )
@@ -121,9 +122,15 @@ module.exports = function () {
   var log = new Log( _options )
   _info_dest( href, _options )
   if ( _options.agent === undefined ) {
-    var agent = url.parse( href ).protocol === 'https:'
-      ? new https.Agent( _options )
-      : new http.Agent( { 'keepAlive': true } )
+    let agent;
+    if ( _options.socksproxy ) {
+      agent = new SocksProxyAgent( _options.socksproxy )
+    }
+    else {
+      agent = url.parse(href).protocol === 'https:'
+        ? new https.Agent(_options)
+        : new http.Agent({'keepAlive': true})
+    }
     _options.agent = agent
   }
   function filter_on_href( list, urlpath ) {

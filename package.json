@@ -43,6 +43,7 @@
     "plugin-error": "^1.0.1",
     "request": "^2.81.0",
     "xml2js": "^0.4.17"
+    "socks-proxy-agent": "^8.0.5",
   },
   "homepage": "https://github.com/millercl/gulp-webdav-sync#readme",
   "directories": {
